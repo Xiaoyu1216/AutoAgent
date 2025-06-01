@@ -1,26 +1,36 @@
 import inspect
 from datetime import datetime
-import socket
+import socket # Low-level networking interface (TCP/UDP, IP, hostname resolution).
 import json
 import uuid
 from typing import Callable, List, Dict, Any, Optional, Callable, Union, get_args, get_origin
 from dataclasses import is_dataclass, fields, MISSING
-from pydantic import BaseModel
-from rich.panel import Panel
-from rich.prompt import Prompt
-from rich.console import Console
-import inquirer
-from rich.markdown import Markdown
+from pydantic import BaseModel # Data validation and settings management using Python type hints.
+from rich.panel import Panel # Draw bordered panels.
+from rich.prompt import Prompt # Interactive prompts.
+from rich.console import Console # Flexible terminal output.
+import inquirer # Interactive user prompts (checkboxes, lists, text input).
+from rich.markdown import Markdown # Render markdown in the terminal.
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+
+# user_input = prompt("What's your name? ")
+#print(f"Hello, {user_input}!")
+
+# completer = WordCompleter(["python", "javascript", "rust"])
+# user_input = prompt("Choose a language: ", completer=completer)
+
+
+
 def debug_print_swarm(debug: bool, *args: str) -> None:
     if not debug:
         return
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     message = " ".join(map(str, args))
     print(f"\033[97m[\033[90m{timestamp}\033[97m]\033[90m {message}\033[0m")
+    
 def print_in_box(text: str, console: Optional[Console] = None, title: str = "", color: str = "white") -> None:
     """
     Print the text in a box.
@@ -37,8 +47,6 @@ def print_in_box(text: str, console: Optional[Console] = None, title: str = "", 
     console.print('_'*20 + title + '_'*20, style=f"bold {color}")
     console.print(text, highlight=True, emoji=True)
     
-
-
 def debug_print(debug: bool, *args: str, **kwargs: dict) -> None:
     if not debug:
         return
@@ -76,10 +84,10 @@ def print_markdown(md_path: str, console: Optional[Console] = None):
         md_content = f.read()
     console.print(Markdown(md_content))
 
-def single_select_menu(options, message: str = ""):
+def single_select_menu(options, message: str = ""): # Uses inquirer.List to create a single-selection interface
     questions = [
         inquirer.List(
-            'choice',
+            'choice', # 'choice': Key where the selection will be stored
             message=message,
             choices=options,
         ),
@@ -172,6 +180,21 @@ def merge_chunk(final_response: dict, delta: dict) -> None:
 #             },
 #         },
 #     }
+
+# This function analyzes Python type annotations and returns structured type information in a standardized format
+# primarily for converting Python types to JSON Schema-like representations.
+
+# typing.get_origin(): Returns the base type of a type annotation, "Unwraps" special typing constructs to reveal the underlying type
+# get_origin(List[int])         # Returns: list
+# get_origin(Dict[str, int])    # Returns: dict
+# get_origin(Union[int, str])   # Returns: typing.Union
+# get_origin(Optional[float])   # Returns: typing.Union
+
+# typing.get_args(): Returns the type parameters of a generic type; Shows what's inside the square brackets [] of a type annotation
+# get_args(List[int])           # Returns: (int,)
+# get_args(Dict[str, int])      # Returns: (str, int) 
+# get_args(Union[int, str])     # Returns: (int, str)
+# get_args(Optional[float])     # Returns: (float, type(None))
 
 def get_type_info(annotation, base_type_map):
     # 处理基本类型
