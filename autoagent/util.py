@@ -232,6 +232,11 @@ def get_type_info(annotation, base_type_map):
             }
         
         # 处理Union类型
+        # Processes all Union members except None (handles Optional[T] since Optional[T] = Union[T, None])
+        # If only one non-None type remains, returns it directly (optimization)
+        # e.g. Union[int, str] → {"oneOf": [{"type": "integer"}, {"type": "string"}]}
+        # Optional[str] (≡ Union[str, None]) → {"type": "string"}
+        
         elif origin is Union:
             types = [get_type_info(arg, base_type_map) for arg in args if arg != type(None)]
             if len(types) == 1:
@@ -239,10 +244,15 @@ def get_type_info(annotation, base_type_map):
             return {"oneOf": types}
     
     # 处理Pydantic模型
+
+    # Pydantic Model (Runtime-Validated Data Structures)
+    # A runtime data validation library using Python type hints; Enforces types, converts data, and provides schemas
+
+    
     if isinstance(annotation, type):
         try:
-            if issubclass(annotation, BaseModel):
-                schema = annotation.model_json_schema()
+            if issubclass(annotation, BaseModel): # Attempts to verify if the class inherits from Pydantic's BaseModel
+                schema = annotation.model_json_schema() # Uses Pydantic's built-in model_json_schema() to get the base schema
                 # 提取主要schema部分
                 properties = schema.get("properties", {})
                 required = schema.get("required", [])
@@ -267,6 +277,18 @@ def get_type_info(annotation, base_type_map):
             pass
     
     # 处理dataclass
+    # A dataclass is a decorator (@dataclass) that automatically generates common boilerplate code for classes, making them ideal for storing data. 
+    # Introduced in Python 3.7 (via PEP 557), it significantly reduces verbose code while providing powerful features.
+    '''
+    @dataclass
+    class Point:
+        x: float
+        y: float
+    '''
+    # This simple definition automatically gives you: __init__();__repr__();__eq__()
+    # The field() function in Python's dataclasses module provides fine-grained control over how individual attributes behave in a dataclass. 
+    # It's used to customize fields beyond what standard type annotations and default values can achieve.
+    
     if is_dataclass(annotation):
         properties = {}
         required = []
@@ -283,8 +305,15 @@ def get_type_info(annotation, base_type_map):
         }
 
     # 处理TypedDict
+    # TypedDict (Python's Type-Annotated Dictionaries):A type annotation for dictionaries with fixed keys and value types
+    # No runtime enforcement (pure type hint)
+
+    
     if hasattr(annotation, "__annotations__"):
         properties = {}
+        # Syntax: getattr(object, attribute_name, default): Tries to get attribute_name from object; Returns default if the attribute doesn't exist
+        # __required_keys__: Specific to TypedDict (PEP 589); Contains a set of mandatory keys (non-optional fields)
+        
         required = getattr(annotation, "__required_keys__", annotation.__annotations__.keys())
         
         for key, field_type in annotation.__annotations__.items():
