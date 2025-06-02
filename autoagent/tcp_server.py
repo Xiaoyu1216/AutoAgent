@@ -34,9 +34,10 @@ if __name__ == "__main__":
                 break
             
             # Execute the command
-            try:
+            try: # -c: Tells Bash to execute the following command string
+                # Source conda initialization; Activate 'autogpt' environment; Change to specified workplace directory; Execute received command
                 modified_command = f"/bin/bash -c 'source /home/user/micromamba/etc/profile.d/conda.sh && conda activate autogpt && cd /{args.workplace} && {command}'"
-                process = subprocess.Popen(modified_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                process = subprocess.Popen(modified_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True) # Uses subprocess.Popen to run the command
                 output = ''
                 while True:
                     line = process.stdout.readline()
