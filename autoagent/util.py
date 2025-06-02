@@ -146,7 +146,7 @@ def merge_chunk(final_response: dict, delta: dict) -> None:
 #     }
 
 #     try:
-#         signature = inspect.signature(func)
+#         signature = inspect.signature(func) 
 #     except ValueError as e:
 #         raise ValueError(
 #             f"Failed to get signature for function {func.__name__}: {str(e)}"
@@ -367,7 +367,7 @@ def function_to_json(func) -> dict:
     #     return {"type": type_map.get(annotation, "string")}
 
     try:
-        signature = inspect.signature(func)
+        signature = inspect.signature(func) # inspect.signature(func): Extracts the function's parameter details (names, types, defaults).
     except ValueError as e:
         raise ValueError(
             f"Failed to get signature for function {func.__name__}: {str(e)}"
@@ -382,7 +382,7 @@ def function_to_json(func) -> dict:
     #             f"Unknown type annotation {param.annotation} for parameter {param.name}: {str(e)}"
     #         )
     #     parameters[param.name] = {"type": param_type}
-    for param in signature.parameters.values():
+    for param in signature.parameters.values(): # Returns an ordered dictionary view of a function's parameters.
         if param.name == "context_variables":
             continue
         try:
@@ -451,7 +451,14 @@ def run_command_in_container_v1(command, stream_callback: Callable = None):
             print(f"JSON parsing error: {e}")
             print(f"Raw response received: {decoded_response}")
             return {"status": -1, "result": "Response parsing error"}
-        
+            
+# A Docker container is a lightweight, standalone, and executable software package that includes everything needed to run a piece of software:
+# Code; Runtime (e.g., Python, Node.js, Java); System libraries; Environment variables; Configuration files
+# Containers are created from Docker images, which are read-only templates defining the application environment.
+# Isolation: Each container runs in its own isolated environment, separate from the host system and other containers.
+# Portability: Containers can run consistently across different environments (development, testing, production).
+# Lightweight & Fast: Unlike virtual machines (VMs), containers share the host OS kernel, making them much smaller and faster to start.
+
 def run_command_in_container(command, stream_callback=None):
     """
     communicate with docker container and execute command, support stream output
@@ -469,12 +476,12 @@ def run_command_in_container(command, stream_callback=None):
     buffer_size = 4096
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((hostname, port))
-        s.sendall(command.encode())
+        s.connect((hostname, port)) # Creates a TCP socket connection to localhost on port 12345
+        s.sendall(command.encode()) # Sends the command to the container after encoding it to bytes
         
         partial_line = ""
         while True:
-            chunk = s.recv(buffer_size)
+            chunk = s.recv(buffer_size) #Receives data in chunks of up to 4096 bytes
             if not chunk:
                 break
                 
@@ -486,11 +493,11 @@ def run_command_in_container(command, stream_callback=None):
             for line in lines[:-1]:
                 if line:
                     try:
-                        response = json.loads(line)
+                        response = json.loads(line) # parses a JSON-formatted string into a Python dictionary (or a list, depending on the JSON structure).
                         if response['type'] == 'chunk':
                             # process stream output
                             if stream_callback:
-                                stream_callback(response['data'])
+                                stream_callback(response['data']) # Progressively sending chunks of output data (as they arrive) to a user-defined function, instead of waiting for all the data at once.
                         elif response['type'] == 'final':
                             # return the final result
                             return {
