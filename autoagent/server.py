@@ -1,3 +1,6 @@
+# FastAPI is a modern, high-performance Python web framework for building APIs (Application Programming Interfaces). It is designed for speed, ease of use, and automatic documentation. 
+# 
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -8,14 +11,19 @@ from autoagent.types import Agent, Response
 import importlib
 import inspect
 
-# 定义lifespan上下文管理器
+# A decorator is a powerful Python feature that modifies or enhances functions or classes without permanently changing their source code. 
+# Think of it as "wrapping" your existing code to add new capabilities.
+# GET	Retrieve data	Fetching a webpage, loading user profile
+# POST	Send/submit data	Login forms, file uploads, API commands
+
+# A context manager is a Python construct that: Sets up resources when entering a block of code (e.g., opening a file). 
+# Cleans up resources when exiting the block (e.g., closing the file).
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动时执行
     await create_agent_endpoints(app)
     yield
-    # 关闭时执行
-    # 清理代码（如果需要）
+    
 
 app = FastAPI(title="MetaChain API", lifespan=lifespan)
 
@@ -35,21 +43,21 @@ class AgentResponse(BaseModel):
     result: str
     messages: List
     agent_name: str
-# 为所有注册的tools创建endpoints
+
 @app.on_event("startup")
 def create_tool_endpoints():
     for tool_name, tool_func in registry.tools.items():
-        # 创建动态的POST endpoint
+        
         async def create_tool_endpoint(request: ToolRequest, func=tool_func):
             try:
-                # 检查必需参数
+                
                 sig = inspect.signature(func)
                 required_params = {
                     name for name, param in sig.parameters.items()
                     if param.default == inspect.Parameter.empty
                 }
                 
-                # 验证是否提供了所有必需参数
+                
                 if not all(param in request.args for param in required_params):
                     missing = required_params - request.args.keys()
                     raise HTTPException(
@@ -62,10 +70,10 @@ def create_tool_endpoints():
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
         
-        # 添加endpoint到FastAPI应用
         endpoint = create_tool_endpoint
         endpoint.__name__ = f"tool_{tool_name}"
         app.post(f"/tools/{tool_name}")(endpoint)
+        
 # 重写agent endpoints创建逻辑
 @app.on_event("startup")
 def create_agent_endpoints():
@@ -110,7 +118,6 @@ def create_agent_endpoints():
         endpoint.__name__ = f"agent_{agent_name}"
         app.post(f"/agents/{agent_name}/run")(endpoint)
 
-# 获取所有可用的agents信息
 @app.get("/agents")
 async def list_agents():
     return {
@@ -122,7 +129,6 @@ async def list_agents():
         for name, info in registry.agents_info.items()
     }
 
-# 获取特定agent的详细信息
 @app.get("/agents/{agent_name}")
 async def get_agent_info(agent_name: str):
     if agent_name not in registry.agents_info:
